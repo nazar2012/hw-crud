@@ -23,6 +23,9 @@
   },
   "homepage": "https://github.com/nazar2012/hw-crud#readme",
   "devDependencies": {
+    "@pnotify/core": "^5.2.0",
+    "@pnotify/desktop": "^5.2.0",
+    "@pnotify/mobile": "^5.2.0",
     "gh-pages": "^6.3.0",
     "parcel": "^2.16.3"
   },
