@@ -720,16 +720,18 @@ var _brightThemeCss = require("@pnotify/core/dist/BrightTheme.css");
 var _pnotifyMobileCss = require("@pnotify/mobile/dist/PNotifyMobile.css");
 const tableBody = document.querySelector("#students-table tbody");
 const form = document.querySelector("#add-student-form");
+const getStudentsBtn = document.querySelector("#get-students-btn");
 let editStudentId = null;
-// Функція для отримання всіх студентів
-function getStudents() {
-    fetch("http://localhost:3000/students").then((res)=>res.json()).then((students)=>renderStudents(students));
+async function getStudents() {
+    getStudentsBtn.disabled = true;
+    const res = await fetch("http://localhost:3000/students");
+    const students = await res.json();
+    renderStudents(students);
 }
-// Функція для відображення студентів у таблиці
 function renderStudents(students) {
     tableBody.innerHTML = "";
     const item = students.map((student)=>{
-        return `<tr id="tr">
+        return `<tr>
             <td>${student.id}</td>
             <td>${student.name}</td>
             <td>${student.age}</td>
@@ -737,18 +739,20 @@ function renderStudents(students) {
             <td>${student.skills.join(", ")}</td>
             <td>${student.email}</td>
             <td>${student.isEnrolled ? "\u0417\u0430\u043F\u0438\u0441\u0430\u043D\u0438\u0439" : "\u041D\u0435 \u0437\u0430\u043F\u0438\u0441\u0430\u043D\u0438\u0439"}</td>
-            <td><div class="btn-wrapper"><button data-action="delete" type="button" class="button-del">Delete</button>
-            <button data-action="edit" type="button" class="button">Edit</button>
-        </div></td>
+            <td>
+                <div class="btn-wrapper">
+                    <button data-action="delete" type="button" class="button-del">Delete</button>
+                    <button data-action="edit" type="button" class="button">Edit</button>
+                </div>
+            </td>
         </tr>`;
     }).join("");
     tableBody.innerHTML = item;
 }
-// Функція для додавання нового студента
-function addStudent(e) {
+async function addStudent(e) {
     e.preventDefault();
     if (editStudentId) {
-        updateStudent(editStudentId);
+        await updateStudent(editStudentId);
         return;
     }
     const newStudent = {
@@ -759,19 +763,21 @@ function addStudent(e) {
         email: form.email.value,
         isEnrolled: form.isEnrolled.checked
     };
-    fetch("http://localhost:3000/students", {
+    await fetch("http://localhost:3000/students", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
         body: JSON.stringify(newStudent)
-    }).then((res)=>res.json()).then(()=>{
-        form.reset();
-        getStudents();
+    });
+    form.reset();
+    await getStudents();
+    (0, _core.success)({
+        title: "\u0414\u043E\u0434\u0430\u0432\u0430\u043D\u043D\u044F",
+        text: "\u0421\u0442\u0443\u0434\u0435\u043D\u0442\u0430 \u0443\u0441\u043F\u0456\u0448\u043D\u043E \u0434\u043E\u0434\u0430\u043D\u043E"
     });
 }
-// Функція для оновлення студента
-function updateStudent(id) {
+async function updateStudent(id) {
     const updatedStudent = {
         name: form.name.value,
         age: Number(form.age.value),
@@ -780,62 +786,63 @@ function updateStudent(id) {
         email: form.email.value,
         isEnrolled: form.isEnrolled.checked
     };
-    fetch(`http://localhost:3000/students/${id}`, {
+    await fetch(`http://localhost:3000/students/${id}`, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json"
         },
         body: JSON.stringify(updatedStudent)
-    }).then(()=>{
-        form.reset();
-        editStudentId = null;
-        form.querySelector("button").textContent = "\u0414\u043E\u0434\u0430\u0442\u0438 \u0441\u0442\u0443\u0434\u0435\u043D\u0442\u0430";
-        getStudents();
+    });
+    form.reset();
+    editStudentId = null;
+    form.querySelector("button").textContent = "\u0414\u043E\u0434\u0430\u0442\u0438 \u0441\u0442\u0443\u0434\u0435\u043D\u0442\u0430";
+    await getStudents();
+    (0, _core.success)({
+        title: "\u041E\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F",
+        text: "\u0414\u0430\u043D\u0456 \u0441\u0442\u0443\u0434\u0435\u043D\u0442\u0430 \u043E\u043D\u043E\u0432\u043B\u0435\u043D\u043E"
     });
 }
-function fillFormForEdit(id) {
-    fetch(`http://localhost:3000/students/${id}`).then((res)=>res.json()).then((student)=>{
-        form.name.value = student.name;
-        form.age.value = student.age;
-        form.course.value = student.course;
-        form.skills.value = student.skills.join(", ");
-        form.email.value = student.email;
-        form.isEnrolled.checked = student.isEnrolled;
-        editStudentId = id;
-        form.querySelector("button").textContent = "\u041E\u043D\u043E\u0432\u0438\u0442\u0438 \u0441\u0442\u0443\u0434\u0435\u043D\u0442\u0430";
-        form.scrollIntoView({
-            behavior: "smooth"
-        });
-        (0, _core.info)({
-            title: "\u0420\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u043D\u043D\u044F",
-            text: `\u{413}\u{43E}\u{442}\u{43E}\u{432}\u{43E}! \u{422}\u{435}\u{43F}\u{435}\u{440} \u{43C}\u{43E}\u{436}\u{435}\u{442}\u{435} \u{437}\u{43C}\u{456}\u{43D}\u{438}\u{442}\u{438} \u{434}\u{430}\u{43D}\u{456} \u{441}\u{442}\u{443}\u{434}\u{435}\u{43D}\u{442}\u{430}`
-        });
+async function fillFormForEdit(id) {
+    const res = await fetch(`http://localhost:3000/students/${id}`);
+    const student = await res.json();
+    form.name.value = student.name;
+    form.age.value = student.age;
+    form.course.value = student.course;
+    form.skills.value = student.skills.join(", ");
+    form.email.value = student.email;
+    form.isEnrolled.checked = student.isEnrolled;
+    editStudentId = id;
+    form.querySelector("button").textContent = "\u041E\u043D\u043E\u0432\u0438\u0442\u0438 \u0441\u0442\u0443\u0434\u0435\u043D\u0442\u0430";
+    form.scrollIntoView({
+        behavior: "smooth"
+    });
+    (0, _core.info)({
+        title: "\u0420\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u043D\u043D\u044F",
+        text: "\u0422\u0435\u043F\u0435\u0440 \u043C\u043E\u0436\u0435\u0442\u0435 \u0437\u043C\u0456\u043D\u0438\u0442\u0438 \u0434\u0430\u043D\u0456 \u0441\u0442\u0443\u0434\u0435\u043D\u0442\u0430"
     });
 }
-tableBody.addEventListener("click", (event)=>{
+tableBody.addEventListener("click", async (event)=>{
     const action = event.target.dataset.action;
     if (!action) return;
     const tr = event.target.closest("tr");
     const id = tr.children[0].textContent;
-    if (action === "delete") deleteStudent(id);
-    if (action === "edit") fillFormForEdit(id);
+    if (action === "delete") await deleteStudent(id);
+    if (action === "edit") await fillFormForEdit(id);
 });
-// Функція для видалення студента
-function deleteStudent(id) {
-    fetch(`http://localhost:3000/students/${id}`, {
+async function deleteStudent(id) {
+    await fetch(`http://localhost:3000/students/${id}`, {
         method: "DELETE"
-    }).then((res)=>{
-        getStudents();
-        (0, _core.success)({
-            title: "\u0412\u0438\u0434\u0430\u043B\u0435\u043D\u043D\u044F",
-            text: `\u{421}\u{442}\u{443}\u{434}\u{435}\u{43D}\u{442}\u{430} \u{432}\u{438}\u{434}\u{430}\u{43B}\u{435}\u{43D}\u{43E}`
-        });
+    });
+    await getStudents();
+    (0, _core.success)({
+        title: "\u0412\u0438\u0434\u0430\u043B\u0435\u043D\u043D\u044F",
+        text: "\u0421\u0442\u0443\u0434\u0435\u043D\u0442\u0430 \u0432\u0438\u0434\u0430\u043B\u0435\u043D\u043E"
     });
 }
+getStudentsBtn.addEventListener("click", getStudents);
 form.addEventListener("submit", addStudent);
-getStudents();
 
-},{"@pnotify/core/dist/BrightTheme.css":"grIyt","@pnotify/core":"fay4s","@pnotify/mobile/dist/PNotifyMobile.css":"iv3sV","@pnotify/core/dist/PNotify.css":"c4y47"}],"grIyt":[function() {},{}],"fay4s":[function(require,module,exports,__globalThis) {
+},{"@pnotify/core":"fay4s","@pnotify/core/dist/PNotify.css":"c4y47","@pnotify/core/dist/BrightTheme.css":"grIyt","@pnotify/mobile/dist/PNotifyMobile.css":"iv3sV"}],"fay4s":[function(require,module,exports,__globalThis) {
 var global = arguments[3];
 !function(t, e) {
     e(exports);
@@ -3459,6 +3466,6 @@ var global = arguments[3];
     });
 });
 
-},{}],"iv3sV":[function() {},{}],"c4y47":[function() {},{}]},["5j6Kf","a0t4e"], "a0t4e", "parcelRequire7a11", {})
+},{}],"c4y47":[function() {},{}],"grIyt":[function() {},{}],"iv3sV":[function() {},{}]},["5j6Kf","a0t4e"], "a0t4e", "parcelRequire7a11", {})
 
 //# sourceMappingURL=hw-crud.31b563d9.js.map

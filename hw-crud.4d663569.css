@@ -66,4 +66,9 @@ form input {
   margin-bottom: 10px;
   padding: 6px;
 }
+
+button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
 /*# sourceMappingURL=hw-crud.4d663569.css.map */
