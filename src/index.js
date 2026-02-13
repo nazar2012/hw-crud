@@ -5,19 +5,23 @@ import '@pnotify/mobile/dist/PNotifyMobile.css';
 
 const tableBody = document.querySelector("#students-table tbody");
 const form = document.querySelector("#add-student-form");
-let editStudentId = null;
+const getStudentsBtn = document.querySelector("#get-students-btn");
+let editStudentId = null;   
 
-// Функція для отримання всіх студентів
-function getStudents() {
-    fetch("http://localhost:3000/students").then(res => res.json()).then(students => renderStudents(students))
+async function getStudents() {
+    getStudentsBtn.disabled = true;
+
+    const res = await fetch("http://localhost:3000/students");
+    const students = await res.json();
+    renderStudents(students);
 }
 
-// Функція для відображення студентів у таблиці
+
 function renderStudents(students) {
     tableBody.innerHTML = "";
 
     const item = students.map(student => {
-        return `<tr id="tr">
+        return `<tr>
             <td>${student.id}</td>
             <td>${student.name}</td>
             <td>${student.age}</td>
@@ -25,21 +29,23 @@ function renderStudents(students) {
             <td>${student.skills.join(", ")}</td>
             <td>${student.email}</td>
             <td>${student.isEnrolled ? "Записаний" : "Не записаний"}</td>
-            <td><div class="btn-wrapper"><button data-action="delete" type="button" class="button-del">Delete</button>
-            <button data-action="edit" type="button" class="button">Edit</button>
-        </div></td>
-        </tr>`
+            <td>
+                <div class="btn-wrapper">
+                    <button data-action="delete" type="button" class="button-del">Delete</button>
+                    <button data-action="edit" type="button" class="button">Edit</button>
+                </div>
+            </td>
+        </tr>`;
     }).join("");
 
     tableBody.innerHTML = item;
 }
 
-// Функція для додавання нового студента
-function addStudent(e) {
+async function addStudent(e) {
     e.preventDefault();
 
     if (editStudentId) {
-        updateStudent(editStudentId);
+        await updateStudent(editStudentId);
         return;
     }
 
@@ -52,20 +58,22 @@ function addStudent(e) {
         isEnrolled: form.isEnrolled.checked
     };
 
-    fetch("http://localhost:3000/students", {
+    await fetch("http://localhost:3000/students", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newStudent)
-    })
-        .then(res => res.json())
-        .then(() => {
-            form.reset();
-            getStudents();
-        });
+    });
+
+    form.reset();
+    await getStudents();
+
+    success({
+        title: 'Додавання',
+        text: 'Студента успішно додано'
+    });
 }
 
-// Функція для оновлення студента
-function updateStudent(id) {
+async function updateStudent(id) {
     const updatedStudent = {
         name: form.name.value,
         age: Number(form.age.value),
@@ -75,43 +83,47 @@ function updateStudent(id) {
         isEnrolled: form.isEnrolled.checked
     };
 
-    fetch(`http://localhost:3000/students/${id}`, {
+    await fetch(`http://localhost:3000/students/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedStudent)
-    })
-        .then(() => {
-            form.reset();
-            editStudentId = null;
-            form.querySelector("button").textContent = "Додати студента";
-            getStudents();
-        });
+    });
+
+    form.reset();
+    editStudentId = null;
+    form.querySelector("button").textContent = "Додати студента";
+
+    await getStudents();
+
+    success({
+        title: 'Оновлення',
+        text: 'Дані студента оновлено'
+    });
 }
 
-function fillFormForEdit(id) {
-    fetch(`http://localhost:3000/students/${id}`)
-        .then(res => res.json())
-        .then(student => {
-            form.name.value = student.name;
-            form.age.value = student.age;
-            form.course.value = student.course;
-            form.skills.value = student.skills.join(", ");
-            form.email.value = student.email;
-            form.isEnrolled.checked = student.isEnrolled;
+async function fillFormForEdit(id) {
+    const res = await fetch(`http://localhost:3000/students/${id}`);
+    const student = await res.json();
 
-            editStudentId = id;
-            form.querySelector("button").textContent = "Оновити студента";
+    form.name.value = student.name;
+    form.age.value = student.age;
+    form.course.value = student.course;
+    form.skills.value = student.skills.join(", ");
+    form.email.value = student.email;
+    form.isEnrolled.checked = student.isEnrolled;
 
-            form.scrollIntoView({ behavior: "smooth" });
+    editStudentId = id;
+    form.querySelector("button").textContent = "Оновити студента";
 
-            info({
-                title: 'Редагування',
-                text: `Готово! Тепер можете змінити дані студента`
-            });
-        });
+    form.scrollIntoView({ behavior: "smooth" });
+
+    info({
+        title: 'Редагування',
+        text: 'Тепер можете змінити дані студента'
+    });
 }
 
-tableBody.addEventListener("click", (event) => {
+tableBody.addEventListener("click", async (event) => {
     const action = event.target.dataset.action;
     if (!action) return;
 
@@ -119,28 +131,27 @@ tableBody.addEventListener("click", (event) => {
     const id = tr.children[0].textContent;
 
     if (action === "delete") {
-        deleteStudent(id);
+        await deleteStudent(id);
     }
 
     if (action === "edit") {
-        fillFormForEdit(id);
+        await fillFormForEdit(id);
     }
 });
 
-// Функція для видалення студента
-function deleteStudent(id) {
-    fetch(`http://localhost:3000/students/${id}`, {
+async function deleteStudent(id) {
+    await fetch(`http://localhost:3000/students/${id}`, {
         method: "DELETE"
-    })
-        .then(res => {
-            getStudents();
-            success({
-                title: 'Видалення',
-                text: `Студента видалено`
-            });
-        });
+    });
+
+    await getStudents();
+
+    success({
+        title: 'Видалення',
+        text: 'Студента видалено'
+    });
 }
 
-form.addEventListener("submit", addStudent);
 
-getStudents();
+getStudentsBtn.addEventListener("click", getStudents);
+form.addEventListener("submit", addStudent);

@@ -68,3 +68,8 @@ form input {
     width: 100%;
     box-sizing: border-box;
 }
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
